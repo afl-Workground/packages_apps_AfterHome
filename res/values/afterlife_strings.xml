@@ -22,7 +22,7 @@
     <string name="google_folder_title" translatable="false">Google</string>
 
     <!-- General -->
-    <string name="settings_title">Home settings</string>
+    <string name="settings_title">AfterHome settings</string>
 
     <!-- Categories -->
     <string name="home_category_title">Home screen</string>
@@ -52,7 +52,9 @@
 
     <!-- Hide labels -->
     <string name="desktop_show_labels">Icon labels on desktop</string>
+    <string name="desktop_show_summary">Visible for Apps label in Desktop</string>
     <string name="drawer_show_labels">Icon labels in drawer</string>
+    <string name="drawer_show_summary">Visible for Apps label in App Drawer</string>
 
     <!-- Settings title to show Google Now at -1 screen on launcher. [CHAR LIMIT=50] -->
     <string name="title_show_google_app">Swipe to access Google app</string>
@@ -139,9 +141,11 @@
 
     <!-- Homescreen Statusbar -->
     <string name="show_statusbar_title">Status Bar</string>
+    <string name="show_statusbar_summary">Show Status Bar in home screen</string>
 
     <!-- Top shadow -->
     <string name="show_top_shadow">Top shadow</string>
+    <string name="show_top_shadow_summary">Show top shadow effect in home screen layout</string>
 
     <!-- Parallax -->
     <string name="short_parallax_title">Allow short parallax</string>
