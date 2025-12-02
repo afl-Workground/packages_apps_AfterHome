@@ -599,6 +599,10 @@ public abstract class RecentsView<
 
     private float mAdjacentPageHorizontalOffset = 0;
     private float mDesktopCarouselDetachProgress = 0;
+    
+    // iOS-style stack view mode
+    private boolean mStackModeEnabled = true;
+    private float mStackScrollProgress = 0f;
     protected float mTaskViewsSecondaryTranslation = 0;
     protected float mTaskViewsPrimarySplitTranslation = 0;
     protected float mTaskViewsSecondarySplitTranslation = 0;
@@ -2531,16 +2535,68 @@ public abstract class RecentsView<
 
     /**
      * Scales and adjusts translation of adjacent pages as if on a curved carousel.
+     * When stack mode is enabled, applies iOS-style stack transforms instead.
      */
     public void updateCurveProperties() {
         if (getPageCount() == 0 || getPageAt(0).getMeasuredWidth() == 0) {
             return;
         }
+        
+        if (mStackModeEnabled) {
+            updateStackTransforms();
+            return;
+        }
+        
         int scroll = getPagedOrientationHandler().getPrimaryScroll(this);
         mClearAllButton.onRecentsViewScroll(scroll, mOverviewGridEnabled);
 
         // Clear all button alpha was set by the previous line.
         mActionsView.getIndexScrollAlpha().updateValue(1 - mClearAllButton.getScrollAlpha());
+    }
+    
+    /**
+     * Updates transforms for iOS-style stack view.
+     * Tasks are stacked with depth effect - front task is larger,
+     * back tasks are progressively smaller and shifted up.
+     */
+    private void updateStackTransforms() {
+        int taskCount = getTaskViewCount();
+        if (taskCount == 0) return;
+        
+        int scroll = getPagedOrientationHandler().getPrimaryScroll(this);
+        int taskHeight = getHeight() / 2;
+        mStackScrollProgress = taskHeight > 0 ? (float) scroll / taskHeight : 0f;
+        
+        for (int i = 0; i < taskCount; i++) {
+            TaskView taskView = requireTaskViewAt(i);
+            if (taskView != null) {
+                StackTransformHelper.StackTransform transform = 
+                    StackTransformHelper.INSTANCE.computeStackTransform(i, mStackScrollProgress, taskCount);
+                StackTransformHelper.INSTANCE.applyStackTransform(taskView, transform, false);
+            }
+        }
+        
+        // Update clear all and actions view
+        mClearAllButton.onRecentsViewScroll(scroll, mOverviewGridEnabled);
+        mActionsView.getIndexScrollAlpha().updateValue(1 - mClearAllButton.getScrollAlpha());
+    }
+    
+    /**
+     * Sets whether iOS-style stack view mode is enabled.
+     */
+    public void setStackModeEnabled(boolean enabled) {
+        if (mStackModeEnabled != enabled) {
+            mStackModeEnabled = enabled;
+            requestLayout();
+            updateCurveProperties();
+        }
+    }
+    
+    /**
+     * Returns whether iOS-style stack view mode is enabled.
+     */
+    public boolean isStackModeEnabled() {
+        return mStackModeEnabled;
     }
 
     @Override
