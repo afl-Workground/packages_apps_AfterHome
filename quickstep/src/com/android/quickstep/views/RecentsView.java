@@ -2548,18 +2548,47 @@ public abstract class RecentsView<
         // Clear all button alpha was set by the previous line.
         mActionsView.getIndexScrollAlpha().updateValue(1 - mClearAllButton.getScrollAlpha());
 
-        // iOS-style scaling: Scale down tasks as they move away from the center
+        // iOS/MIUI-style Stack Layout Implementation
         if (!showAsGrid()) {
             int halfScreen = getMeasuredWidth() / 2;
-            for (int i = 0; i < getChildCount(); i++) {
+            int taskWidth = getLastComputedTaskSize().width(); 
+            // Standard spacing is set via xml, but we need dynamic overlap
+            float overlapFactor = 0.55f; // How much tasks overlap (0.0 = no overlap, 1.0 = full overlap)
+
+            for (int i = 0; i < getTaskViewCount(); i++) {
                 View child = getChildAt(i);
                 if (child instanceof TaskView) {
+                    TaskView taskView = (TaskView) child;
                     int childScroll = getScrollForPage(i);
-                    float dist = Math.abs(scroll - childScroll);
-                    // Calculate scale: 1.0 at center, 0.92 at the edge of the screen
-                    float scale = Math.max(0.92f, 1f - (0.08f * dist / halfScreen));
-                    child.setScaleX(scale);
-                    child.setScaleY(scale);
+                    int childCenter = childScroll + taskWidth / 2;
+                    int screenCenter = scroll + halfScreen;
+                    float dist = childCenter - screenCenter; // Positive = right, Negative = left
+
+                    // 1. Scale Effect
+                    // Scale 1.0 at center, drops to 0.85 at edges
+                    float absDist = Math.abs(dist);
+                    float scale = Math.max(0.85f, 1f - (0.15f * (absDist / halfScreen)));
+                    taskView.setScaleX(scale);
+                    taskView.setScaleY(scale);
+
+                    // 2. Translation/Overlap Effect
+                    float translationX = 0;
+                    if (dist > 0) {
+                        // Task is to the right. Pull it left to stack behind the center task.
+                        // The further right it is, the more we pull it back, creating a "stack" pile.
+                        translationX = -dist * overlapFactor; 
+                    } else {
+                        // Task is to the left. Standard scroll or slight separation.
+                        // Optional: Add a slight positive translation to separate the active task from the previous one
+                        translationX = 0; 
+                    }
+                    taskView.setTranslationX(translationX);
+
+                    // 3. Z-Index / Elevation
+                    // Tasks to the right should be BEHIND tasks to the left.
+                    // Standard Recents often puts focused task on top.
+                    // We simply lower the Z of tasks as they go further right.
+                    taskView.setTranslationZ(-i);
                 }
             }
         }
