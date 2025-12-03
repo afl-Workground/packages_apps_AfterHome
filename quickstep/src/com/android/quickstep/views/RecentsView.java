@@ -2547,6 +2547,22 @@ public abstract class RecentsView<
 
         // Clear all button alpha was set by the previous line.
         mActionsView.getIndexScrollAlpha().updateValue(1 - mClearAllButton.getScrollAlpha());
+
+        // iOS-style scaling: Scale down tasks as they move away from the center
+        if (!showAsGrid()) {
+            int halfScreen = getMeasuredWidth() / 2;
+            for (int i = 0; i < getChildCount(); i++) {
+                View child = getChildAt(i);
+                if (child instanceof TaskView) {
+                    int childScroll = getScrollForPage(i);
+                    float dist = Math.abs(scroll - childScroll);
+                    // Calculate scale: 1.0 at center, 0.92 at the edge of the screen
+                    float scale = Math.max(0.92f, 1f - (0.08f * dist / halfScreen));
+                    child.setScaleX(scale);
+                    child.setScaleY(scale);
+                }
+            }
+        }
     }
 
     @Override
