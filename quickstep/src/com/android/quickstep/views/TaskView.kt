@@ -1768,6 +1768,10 @@ constructor(
     fun getSizeAdjustment(fullscreenEnabled: Boolean) = if (fullscreenEnabled) nonGridScale else 1f
 
     private fun applyScale() {
+        // Block this method on phone to allow RecentsView to control scroll scale animation
+        if (!container.deviceProfile.isTablet) {
+            return
+        }
         val scale = persistentScale * dismissScale * Utilities.mapRange(modalness, 1f, modalScale)
         scaleX = scale
         scaleY = scale

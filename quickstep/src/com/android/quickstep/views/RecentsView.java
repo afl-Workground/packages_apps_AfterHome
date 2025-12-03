@@ -594,6 +594,7 @@ public abstract class RecentsView<
     private boolean mOverviewSelectEnabled;
 
     private boolean mShouldClampScrollOffset;
+    private float mScrollScale = 0.75f; // Default for stack scale
     private int mClampedScrollOffsetBound;
 
     private float mAdjacentPageHorizontalOffset = 0;
@@ -5007,6 +5008,7 @@ public abstract class RecentsView<
                         .setScroll(getScrollOffset()));
         setImportantForAccessibility(isModal() ? IMPORTANT_FOR_ACCESSIBILITY_NO
                 : IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+        doScrollScale();
     }
 
     private void updatePivots() {
@@ -6916,6 +6918,51 @@ public abstract class RecentsView<
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
         dispatchScrollChanged();
+        doScrollScale();
+    }
+
+    private void doScrollScale() {
+        if (showAsGrid() || mContainer.getDeviceProfile().isTablet) return;
+        // Ensure page scrolls are initialized to avoid heavy calculations or NPEs
+        if (!isPageScrollsInitialized()) return;
+
+        int scrollX = getScrollX();
+        int childCount = getChildCount();
+        int measuredWidth = getMeasuredWidth();
+
+        for (int i = 0; i < childCount; i++) {
+            View child = getChildAt(i);
+            if (!(child instanceof TaskView)) continue;
+            TaskView taskView = (TaskView) child;
+
+            int childScroll = getScrollForPage(i);
+            float dist = scrollX - childScroll; // > 0 if item is to the LEFT
+
+            // Base Translation calculated by updatePageOffsets
+            float baseTrans = taskView.getPrimaryTaskOffsetTranslationProperty().get(taskView);
+
+            if (dist > 0) { // LEFT Side (Stack)
+                float distFraction = dist / (float) measuredWidth;
+                
+                // Scale Down
+                float scale = 1.0f - (distFraction * 0.2f);
+                scale = Math.max(mScrollScale, scale);
+                taskView.setScaleX(scale);
+                taskView.setScaleY(scale);
+
+                // Overlap / Compress
+                float overlap = dist * 0.75f;
+                taskView.setTranslationX(baseTrans + overlap);
+
+            } else { // RIGHT Side (Focused)
+                taskView.setScaleX(1f);
+                taskView.setScaleY(1f);
+                taskView.setTranslationX(baseTrans);
+            }
+
+            // Z-Index (Right on Top)
+            taskView.setTranslationZ(i * 0.1f);
+        }
     }
 
     /**
