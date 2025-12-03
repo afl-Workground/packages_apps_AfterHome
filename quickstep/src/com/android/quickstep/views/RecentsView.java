@@ -594,7 +594,7 @@ public abstract class RecentsView<
     private boolean mOverviewSelectEnabled;
 
     private boolean mShouldClampScrollOffset;
-    private float mScrollScale = 0.75f; // Default for stack scale
+    private float mScrollScale = 0.75f;
     private int mClampedScrollOffsetBound;
 
     private float mAdjacentPageHorizontalOffset = 0;
@@ -6923,47 +6923,46 @@ public abstract class RecentsView<
 
     private void doScrollScale() {
         if (showAsGrid() || mContainer.getDeviceProfile().isTablet) return;
-        // Ensure page scrolls are initialized to avoid heavy calculations or NPEs
         if (!isPageScrollsInitialized()) return;
 
         int scrollX = getScrollX();
         int childCount = getChildCount();
-        int measuredWidth = getMeasuredWidth();
+        int width = getMeasuredWidth();
 
         for (int i = 0; i < childCount; i++) {
             View child = getChildAt(i);
             if (!(child instanceof TaskView)) continue;
             TaskView taskView = (TaskView) child;
 
-            int childScroll = getScrollForPage(i);
-            float dist = scrollX - childScroll; // > 0 if item is to the LEFT
-
-            // Base Translation calculated by updatePageOffsets
             float baseTrans = taskView.getPrimaryTaskOffsetTranslationProperty().get(taskView);
+            int childScroll = getScrollForPage(i);
+            float dist = scrollX - childScroll; // > 0 if item is LEFT of center
 
-            if (dist > 0) { // LEFT Side (Stack)
-                float distFraction = dist / (float) measuredWidth;
-                
-                // Scale Down
-                float scale = 1.0f - (distFraction * 0.2f);
+            if (dist > 0) {
+                // LEFT (Stack)
+                float progress = dist / (float) width;
+                float scale = 1.0f - (progress * 0.2f);
                 scale = Math.max(mScrollScale, scale);
+                
                 taskView.setScaleX(scale);
                 taskView.setScaleY(scale);
 
-                // Overlap / Compress
+                // Overlap: Add to base translation
                 float overlap = dist * 0.75f;
                 taskView.setTranslationX(baseTrans + overlap);
-
-            } else { // RIGHT Side (Focused)
+            } else {
+                // RIGHT (Focus)
                 taskView.setScaleX(1f);
                 taskView.setScaleY(1f);
                 taskView.setTranslationX(baseTrans);
             }
-
-            // Z-Index (Right on Top)
-            taskView.setTranslationZ(i * 0.1f);
+            
+            // Z-Index: Higher index = On Top
+            taskView.setTranslationZ(i);
         }
     }
+
+
 
     /**
      * Prepares this RecentsView to scroll properly for an upcoming child view focus request from
