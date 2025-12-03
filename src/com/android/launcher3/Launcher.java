@@ -67,6 +67,7 @@ import static com.android.launcher3.LauncherState.FLAG_NON_INTERACTIVE;
 import static com.android.launcher3.LauncherState.NORMAL;
 import static com.android.launcher3.LauncherState.NO_OFFSET;
 import static com.android.launcher3.LauncherState.NO_SCALE;
+import static com.android.launcher3.LauncherState.OVERVIEW;
 import static com.android.launcher3.LauncherState.SPRING_LOADED;
 import static com.android.launcher3.Utilities.postAsyncCallback;
 import static com.android.launcher3.Utilities.shouldEnableMouseInteractionChanges;
@@ -103,6 +104,7 @@ import static com.android.launcher3.popup.SystemShortcut.UNINSTALL;
 import static com.android.launcher3.popup.SystemShortcut.WIDGETS;
 import static com.android.launcher3.states.RotationHelper.REQUEST_LOCK;
 import static com.android.launcher3.states.RotationHelper.REQUEST_NONE;
+import static com.android.launcher3.states.RotationHelper.REQUEST_ROTATE;
 import static com.android.launcher3.testing.shared.TestProtocol.LAUNCHER_ACTIVITY_STOPPED_MESSAGE;
 import static com.android.launcher3.util.ItemInfoMatcher.forFolderMatch;
 import static com.android.launcher3.util.SettingsCache.TOUCHPAD_NATURAL_SCROLLING;
@@ -1136,6 +1138,8 @@ public class Launcher extends StatefulActivity<LauncherState>
 
             mWorkspace.showPageIndicatorAtCurrentScroll();
             mWorkspace.setClipChildren(false);
+        } else if (state == OVERVIEW) {
+            getRotationHelper().setCurrentStateRequest(REQUEST_ROTATE);
         }
         // When multiple pages are visible or desktop devices, show persistent page indicator
         mWorkspace.getPageIndicator().setShouldAutoHide(LauncherPrefs.AUTO_HIDE_DOTS.get(this)
