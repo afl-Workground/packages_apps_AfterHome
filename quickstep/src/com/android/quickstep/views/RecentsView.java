@@ -2567,30 +2567,38 @@ public abstract class RecentsView<
                     // Center (dist=0) -> f2=3.0
                     float f2 = 3.0f + (dist / (float) taskWidth);
 
-                    float scale = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_SCALE, f2);
-                    float alpha = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_ALPHA, f2);
-                    float splineX = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_X_COORD, f2);
-                    
-                    // Spline Y is typically ~0.17 (pushing down). We want to reset this or even lift it up.
-                    // We ignore the spline's native Y offset to respect Launcher3's centering, 
-                    // and add a slight negative offset to clear the bottom actions area.
-                    float splineY = -0.05f; 
-                    
+                    // Calculate raw spline values
+                    float rawScale = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_SCALE, f2);
+                    float rawAlpha = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_ALPHA, f2);
+                    float rawX = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_X_COORD, f2);
+                    float rawY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_Y_COORD, f2);
                     float rotationY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_ROTATION_Y, f2);
 
-                    // Reduce scale significantly as the Miui spline data assumes ~1.15x base scale
-                    scale *= 0.75f; 
+                    // Get anchor values at center (f2=3.0) to normalize
+                    // This ensures the focused task matches the standard TaskView layout (Scale 1.0, Trans 0)
+                    // preventing glitches during gesture-to-recents transitions.
+                    float centerScale = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_SCALE, 3.0f);
+                    float centerY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_Y_COORD, 3.0f);
 
+                    // Normalize Scale: Center should be 1.0f
+                    float scale = rawScale / centerScale;
+
+                    // Normalize Y: Center should be 0 translation
+                    // We subtract the center Y offset from the current Y offset
+                    float translationY = (rawY - centerY) * getMeasuredHeight();
+
+                    // Calculate Visual Offset X
+                    // rawX is 0 at center in the default spline data, so we might not need normalization,
+                    // but we use it as is for the stack effect.
+                    float targetVisualOffset = rawX * getMeasuredWidth();
+                    
                     taskView.setScaleX(scale);
                     taskView.setScaleY(scale);
-                    taskView.setAlpha(alpha);
+                    taskView.setAlpha(rawAlpha);
                     taskView.setRotationY(rotationY);
-
-                    float targetVisualOffset = splineX * getMeasuredWidth();
-                    taskView.setTranslationX(targetVisualOffset - dist);
                     
-                    // Apply the adjusted Y offset
-                    taskView.setTranslationY(splineY * getMeasuredHeight());
+                    taskView.setTranslationX(targetVisualOffset - dist);
+                    taskView.setTranslationY(translationY);
                     
                     // Ensure correct stacking order (tasks to the right are behind)
                     taskView.setTranslationZ(-i);
