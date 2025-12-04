@@ -1726,19 +1726,6 @@ public abstract class RecentsView<
     }
 
     @Override
-    protected void onPageEndTransition() {
-        super.onPageEndTransition();
-        ActiveGestureProtoLogProxy.logOnPageEndTransition(getNextPage());
-        if (isClearAllHidden() && !mContainer.getDeviceProfile().isTablet) {
-            mActionsView.updateDisabledFlags(OverviewActionsView.DISABLED_SCROLLING, false);
-        }
-        if (getNextPage() > 0) {
-            setSwipeDownShouldLaunchApp(true);
-        }
-        InteractionJankMonitorWrapper.end(Cuj.CUJ_RECENTS_SCROLLING);
-    }
-
-    @Override
     protected boolean isSignificantMove(float absoluteDelta, int pageOrientedSize) {
         DeviceProfile deviceProfile = mContainer.getDeviceProfile();
         if (!deviceProfile.isTablet) {
