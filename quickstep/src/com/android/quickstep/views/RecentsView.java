@@ -2575,29 +2575,27 @@ public abstract class RecentsView<
                     float rotationY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_ROTATION_Y, f2);
 
                     // Get anchor values at center (f2=3.0) to normalize
-                    // This ensures the focused task matches the standard TaskView layout (Scale 1.0, Trans 0)
-                    // preventing glitches during gesture-to-recents transitions.
                     float centerScale = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_SCALE, 3.0f);
                     float centerY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_Y_COORD, 3.0f);
+                    float centerX = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_X_COORD, 3.0f);
 
                     // Normalize Scale: Center should be 1.0f
                     float scale = rawScale / centerScale;
 
-                    // Normalize Y: Center should be 0 translation
-                    // We subtract the center Y offset from the current Y offset
+                    // Normalize X & Y: Center should be 0 translation
                     float translationY = (rawY - centerY) * getMeasuredHeight();
-
-                    // Calculate Visual Offset X
-                    // rawX is 0 at center in the default spline data, so we might not need normalization,
-                    // but we use it as is for the stack effect.
-                    float targetVisualOffset = rawX * getMeasuredWidth();
+                    float targetVisualOffsetX = (rawX - centerX) * getMeasuredWidth();
                     
                     taskView.setScaleX(scale);
                     taskView.setScaleY(scale);
                     taskView.setAlpha(rawAlpha);
                     taskView.setRotationY(rotationY);
                     
-                    taskView.setTranslationX(targetVisualOffset - dist);
+                    // Override linear layout with spline layout
+                    // targetVisualOffsetX is the desired distance from screen center
+                    // dist is the current linear distance from screen center
+                    // So we shift by (Desired - Current) to place it exactly at Desired
+                    taskView.setTranslationX(targetVisualOffsetX - dist);
                     taskView.setTranslationY(translationY);
                     
                     // Ensure correct stacking order (tasks to the right are behind)
