@@ -1662,6 +1662,11 @@ public abstract class RecentsView<
 
     public void setOverviewStateEnabled(boolean enabled) {
         mOverviewStateEnabled = enabled;
+        
+        // Force allow rotation when entering Overview to support landscape tasks.
+        // Revert to user preference when leaving Overview (e.g. to Home).
+        mOrientationState.forceAllowRotationForRecents(enabled);
+        
         updateTaskStackListenerState();
         mOrientationState.setRotationWatcherEnabled(enabled);
         if (!enabled) {
@@ -1721,30 +1726,16 @@ public abstract class RecentsView<
     }
 
     @Override
-    public void onStateTransitionStart(STATE_TYPE toState) {
-        // Force allow rotation when entering Overview to support landscape tasks,
-        // but revert to user preference when returning to Home (Normal state)
-        // to ensure Home stays Portrait (if that's the user pref).
-        mOrientationState.forceAllowRotationForRecents(toState == LauncherState.OVERVIEW);
-        
-        setOverviewStateEnabled(toState.overviewUi);
-        setFreezeViewVisibility(true);
-    }
-
-    @Override
-    public void onStateTransitionComplete(STATE_TYPE finalState) {
-        if (finalState == LauncherState.OVERVIEW) {
-            // Ensure rotation is allowed when settled in Overview
-            mOrientationState.forceAllowRotationForRecents(true);
-        } else if (finalState == LauncherState.NORMAL) {
-             // Ensure rotation is reset when settled in Home
-            mOrientationState.forceAllowRotationForRecents(false);
+    protected void onPageEndTransition() {
+        super.onPageEndTransition();
+        ActiveGestureProtoLogProxy.logOnPageEndTransition(getNextPage());
+        if (isClearAllHidden() && !mContainer.getDeviceProfile().isTablet) {
+            mActionsView.updateDisabledFlags(OverviewActionsView.DISABLED_SCROLLING, false);
         }
-
-        setOverviewStateEnabled(finalState.overviewUi);
-        setFreezeViewVisibility(false);
-        loadVisibleTaskData(TaskView.FLAG_UPDATE_ALL);
-        updateHomeTaskOverlayVisibility();
+        if (getNextPage() > 0) {
+            setSwipeDownShouldLaunchApp(true);
+        }
+        InteractionJankMonitorWrapper.end(Cuj.CUJ_RECENTS_SCROLLING);
     }
 
     @Override
