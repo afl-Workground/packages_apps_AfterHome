@@ -2595,8 +2595,8 @@ public abstract class RecentsView<
                     // targetVisualOffsetX is the desired distance from screen center
                     // dist is the current linear distance from screen center
                     // So we shift by (Desired - Current) to place it exactly at Desired
-                    taskView.setTranslationX(targetVisualOffsetX - dist);
-                    taskView.setTranslationY(translationY);
+                    taskView.setCurveTranslationX(targetVisualOffsetX - dist);
+                    taskView.setCurveTranslationY(translationY);
                     
                     // Ensure correct stacking order (tasks to the right are behind)
                     taskView.setTranslationZ(-i);
