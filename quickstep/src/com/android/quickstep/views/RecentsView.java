@@ -2549,11 +2549,10 @@ public abstract class RecentsView<
         mActionsView.getIndexScrollAlpha().updateValue(1 - mClearAllButton.getScrollAlpha());
 
         // iOS/MIUI-style Stack Layout Implementation
-        if (!showAsGrid()) {
+        if (!showAsGrid() && android.provider.Settings.System.getInt(getContext().getContentResolver(), "ios_recent", 0) == 1) {
+            com.android.quickstep.util.IosRecentsMath math = com.android.quickstep.util.IosRecentsMath.getInstance();
             int halfScreen = getMeasuredWidth() / 2;
-            int taskWidth = getLastComputedTaskSize().width(); 
-            // Standard spacing is set via xml, but we need dynamic overlap
-            float overlapFactor = 0.55f; // How much tasks overlap (0.0 = no overlap, 1.0 = full overlap)
+            int taskWidth = getLastComputedTaskSize().width();
 
             for (int i = 0; i < getTaskViewCount(); i++) {
                 View child = getChildAt(i);
@@ -2562,32 +2561,27 @@ public abstract class RecentsView<
                     int childScroll = getScrollForPage(i);
                     int childCenter = childScroll + taskWidth / 2;
                     int screenCenter = scroll + halfScreen;
-                    float dist = childCenter - screenCenter; // Positive = right, Negative = left
+                    float dist = childCenter - screenCenter;
 
-                    // 1. Scale Effect
-                    // Scale 1.0 at center, drops to 0.85 at edges
-                    float absDist = Math.abs(dist);
-                    float scale = Math.max(0.85f, 1f - (0.15f * (absDist / halfScreen)));
+                    // Map dist to f2 (spline parameter)
+                    // Center (dist=0) -> f2=3.0
+                    float f2 = 3.0f + (dist / (float) taskWidth);
+
+                    float scale = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_SCALE, f2);
+                    float alpha = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_ALPHA, f2);
+                    float splineX = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_X_COORD, f2);
+                    float splineY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_Y_COORD, f2);
+                    float rotationY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_ROTATION_Y, f2);
+
                     taskView.setScaleX(scale);
                     taskView.setScaleY(scale);
+                    taskView.setAlpha(alpha);
+                    taskView.setRotationY(rotationY);
 
-                    // 2. Translation/Overlap Effect
-                    float translationX = 0;
-                    if (dist > 0) {
-                        // Task is to the right. Pull it left to stack behind the center task.
-                        // The further right it is, the more we pull it back, creating a "stack" pile.
-                        translationX = -dist * overlapFactor; 
-                    } else {
-                        // Task is to the left. Standard scroll or slight separation.
-                        // Optional: Add a slight positive translation to separate the active task from the previous one
-                        translationX = 0; 
-                    }
-                    taskView.setTranslationX(translationX);
-
-                    // 3. Z-Index / Elevation
-                    // Tasks to the right should be BEHIND tasks to the left.
-                    // Standard Recents often puts focused task on top.
-                    // We simply lower the Z of tasks as they go further right.
+                    float targetVisualOffset = splineX * getMeasuredWidth();
+                    taskView.setTranslationX(targetVisualOffset - dist);
+                    taskView.setTranslationY(splineY * getMeasuredHeight());
+                    // Ensure correct stacking order (tasks to the right are behind)
                     taskView.setTranslationZ(-i);
                 }
             }
