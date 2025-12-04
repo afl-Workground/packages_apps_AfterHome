@@ -2549,7 +2549,7 @@ public abstract class RecentsView<
         mActionsView.getIndexScrollAlpha().updateValue(1 - mClearAllButton.getScrollAlpha());
 
         // iOS/MIUI-style Stack Layout Implementation
-        if (!showAsGrid() && android.provider.Settings.System.getInt(getContext().getContentResolver(), "ios_recent", 0) == 1) {
+        if (!showAsGrid()) {
             com.android.quickstep.util.IosRecentsMath math = com.android.quickstep.util.IosRecentsMath.getInstance();
             int halfScreen = getMeasuredWidth() / 2;
             int taskWidth = getLastComputedTaskSize().width();
@@ -2558,9 +2558,10 @@ public abstract class RecentsView<
                 View child = getChildAt(i);
                 if (child instanceof TaskView) {
                     TaskView taskView = (TaskView) child;
-                    int childScroll = getScrollForPage(i);
-                    int childCenter = childScroll + taskWidth / 2;
-                    int screenCenter = scroll + halfScreen;
+                    
+                    // Correctly calculate distance using Layout Position vs Scroll Position
+                    int childCenter = child.getLeft() + child.getMeasuredWidth() / 2;
+                    int screenCenter = scroll + getMeasuredWidth() / 2;
                     float dist = childCenter - screenCenter;
 
                     // Map dist to f2 (spline parameter)
@@ -2598,7 +2599,8 @@ public abstract class RecentsView<
                     taskView.setCurveTranslationX(targetVisualOffsetX - dist);
                     taskView.setCurveTranslationY(translationY);
                     
-                    // Ensure correct stacking order (tasks to the right are behind)
+                    // Ensure correct stacking order (tasks to the right are ON TOP)
+                    // Higher index = Rightmost = Newest = Top
                     taskView.setTranslationZ(-i);
                 }
             }
