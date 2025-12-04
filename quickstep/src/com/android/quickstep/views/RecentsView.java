@@ -2583,9 +2583,16 @@ public abstract class RecentsView<
                     // Normalize Scale: Center should be 1.0f
                     float scale = rawScale / centerScale;
 
+                    // Determine Visual Dimensions (Short vs Long axis) to match MIUI logic
+                    // Spline X is scaled by the Short Axis (Stack bunching)
+                    // Spline Y is scaled by the Long Axis (Vertical offset)
+                    boolean isLandscape = getMeasuredWidth() > getMeasuredHeight();
+                    float visualWidth = isLandscape ? getMeasuredHeight() : getMeasuredWidth(); // Short Axis
+                    float visualHeight = isLandscape ? getMeasuredWidth() : getMeasuredHeight(); // Long Axis
+
                     // Normalize X & Y: Center should be 0 translation
-                    float translationY = (rawY - centerY) * getMeasuredHeight();
-                    float targetVisualOffsetX = (rawX - centerX) * getMeasuredWidth();
+                    float translationY = (rawY - centerY) * visualHeight;
+                    float targetVisualOffsetX = (rawX - centerX) * visualWidth;
                     
                     taskView.setScaleX(scale);
                     taskView.setScaleY(scale);
@@ -2593,9 +2600,6 @@ public abstract class RecentsView<
                     taskView.setRotationY(rotationY);
                     
                     // Override linear layout with spline layout
-                    // targetVisualOffsetX is the desired distance from screen center
-                    // dist is the current linear distance from screen center
-                    // So we shift by (Desired - Current) to place it exactly at Desired
                     taskView.setCurveTranslationX(targetVisualOffsetX - dist);
                     taskView.setCurveTranslationY(translationY);
                     
