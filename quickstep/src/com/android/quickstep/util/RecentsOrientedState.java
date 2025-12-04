@@ -255,6 +255,12 @@ public class RecentsOrientedState implements LauncherPrefChangeListener {
     }
 
     private boolean shouldUseRealOrientation() {
+        // If system rotation is disabled, the activity won't rotate (unless forced),
+        // so we must fallback to the 'Fake' orientation handler (Landscape/Seascape)
+        // to visually match the app's orientation.
+        if ((mFlags & FLAG_SYSTEM_ROTATION_ALLOWED) == 0) {
+            return false;
+        }
         return isRecentsActivityRotationAllowed() || isLauncherFixedLandscape();
     }
 
