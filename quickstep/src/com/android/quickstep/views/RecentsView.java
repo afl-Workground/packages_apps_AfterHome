@@ -1721,6 +1721,33 @@ public abstract class RecentsView<
     }
 
     @Override
+    public void onStateTransitionStart(STATE_TYPE toState) {
+        // Force allow rotation when entering Overview to support landscape tasks,
+        // but revert to user preference when returning to Home (Normal state)
+        // to ensure Home stays Portrait (if that's the user pref).
+        mOrientationState.forceAllowRotationForRecents(toState == LauncherState.OVERVIEW);
+        
+        setOverviewStateEnabled(toState.overviewUi);
+        setFreezeViewVisibility(true);
+    }
+
+    @Override
+    public void onStateTransitionComplete(STATE_TYPE finalState) {
+        if (finalState == LauncherState.OVERVIEW) {
+            // Ensure rotation is allowed when settled in Overview
+            mOrientationState.forceAllowRotationForRecents(true);
+        } else if (finalState == LauncherState.NORMAL) {
+             // Ensure rotation is reset when settled in Home
+            mOrientationState.forceAllowRotationForRecents(false);
+        }
+
+        setOverviewStateEnabled(finalState.overviewUi);
+        setFreezeViewVisibility(false);
+        loadVisibleTaskData(TaskView.FLAG_UPDATE_ALL);
+        updateHomeTaskOverlayVisibility();
+    }
+
+    @Override
     protected boolean isSignificantMove(float absoluteDelta, int pageOrientedSize) {
         DeviceProfile deviceProfile = mContainer.getDeviceProfile();
         if (!deviceProfile.isTablet) {

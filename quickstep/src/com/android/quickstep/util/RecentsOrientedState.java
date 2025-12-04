@@ -322,6 +322,14 @@ public class RecentsOrientedState implements LauncherPrefChangeListener {
         }
     }
 
+    public void forceAllowRotationForRecents(boolean force) {
+        if (force) {
+            setFlag(FLAG_HOME_ROTATION_ALLOWED_IN_PREFS, true);
+        } else {
+            updateHomeRotationSetting();
+        }
+    }
+
     private void updateHomeRotationSetting() {
         boolean homeRotationEnabled = LauncherPrefs.get(mContext).get(ALLOW_ROTATION);
         setFlag(FLAG_HOME_ROTATION_ALLOWED_IN_PREFS, homeRotationEnabled);
