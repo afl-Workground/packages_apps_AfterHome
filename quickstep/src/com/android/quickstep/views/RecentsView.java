@@ -2570,8 +2570,16 @@ public abstract class RecentsView<
                     float scale = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_SCALE, f2);
                     float alpha = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_ALPHA, f2);
                     float splineX = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_X_COORD, f2);
-                    float splineY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_Y_COORD, f2);
+                    
+                    // Spline Y is typically ~0.17 (pushing down). We want to reset this or even lift it up.
+                    // We ignore the spline's native Y offset to respect Launcher3's centering, 
+                    // and add a slight negative offset to clear the bottom actions area.
+                    float splineY = -0.05f; 
+                    
                     float rotationY = (float) math.getValue(com.android.quickstep.util.IosRecentsMath.SPLINE_ROTATION_Y, f2);
+
+                    // Reduce scale significantly as the Miui spline data assumes ~1.15x base scale
+                    scale *= 0.75f; 
 
                     taskView.setScaleX(scale);
                     taskView.setScaleY(scale);
@@ -2580,7 +2588,10 @@ public abstract class RecentsView<
 
                     float targetVisualOffset = splineX * getMeasuredWidth();
                     taskView.setTranslationX(targetVisualOffset - dist);
+                    
+                    // Apply the adjusted Y offset
                     taskView.setTranslationY(splineY * getMeasuredHeight());
+                    
                     // Ensure correct stacking order (tasks to the right are behind)
                     taskView.setTranslationZ(-i);
                 }
