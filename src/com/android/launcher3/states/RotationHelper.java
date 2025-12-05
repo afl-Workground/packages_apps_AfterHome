@@ -15,6 +15,7 @@
  */
 package com.android.launcher3.states;
 
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_BEHIND;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LOCKED;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_NOSENSOR;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
@@ -221,9 +222,10 @@ public class RotationHelper implements LauncherPrefChangeListener,
                     SCREEN_ORIENTATION_LOCKED : SCREEN_ORIENTATION_UNSPECIFIED;
         } else if (mCurrentStateRequest == REQUEST_LOCK) {
             activityFlags = SCREEN_ORIENTATION_LOCKED;
-        } else if (mIgnoreAutoRotateSettings || mCurrentStateRequest == REQUEST_ROTATE
-                || mHomeRotationEnabled || mForceAllowRotationForTesting) {
+        } else if (mIgnoreAutoRotateSettings || mHomeRotationEnabled || mForceAllowRotationForTesting) {
             activityFlags = SCREEN_ORIENTATION_UNSPECIFIED;
+        } else if (mCurrentStateRequest == REQUEST_ROTATE) {
+            activityFlags = SCREEN_ORIENTATION_BEHIND;
         } else {
             // If auto rotation is off, allow rotation on the activity, in case the user is using
             // forced rotation.
