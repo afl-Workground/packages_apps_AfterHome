@@ -20,7 +20,12 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_NOSENSOR;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;
 import static android.util.DisplayMetrics.DENSITY_DEVICE_STABLE;
+import static android.view.Surface.ROTATION_0;
+import static android.view.Surface.ROTATION_180;
+import static android.view.Surface.ROTATION_270;
+import static android.view.Surface.ROTATION_90;
 
 import static com.android.launcher3.LauncherPrefs.ALLOW_ROTATION;
 import static com.android.launcher3.Utilities.dpiFromPx;
@@ -223,8 +228,14 @@ public class RotationHelper implements LauncherPrefChangeListener,
         } else if (mCurrentStateRequest == REQUEST_LOCK) {
             activityFlags = SCREEN_ORIENTATION_LOCKED;
         } else if (mCurrentStateRequest == REQUEST_ROTATE) {
-            // Forces rotation based on sensor even if system rotation is locked
-            activityFlags = SCREEN_ORIENTATION_SENSOR;
+            // Lock to the current display rotation to prevent unwanted rotation (e.g. to portrait)
+            // while in Overview, but allow entering in Landscape if the app was in Landscape.
+            int rotation = DisplayController.INSTANCE.get(mActivity).getInfo().rotation;
+            if (rotation == ROTATION_90 || rotation == ROTATION_270) {
+                activityFlags = SCREEN_ORIENTATION_USER_LANDSCAPE;
+            } else {
+                activityFlags = SCREEN_ORIENTATION_USER_PORTRAIT;
+            }
         } else if (mIgnoreAutoRotateSettings || mHomeRotationEnabled || mForceAllowRotationForTesting) {
             activityFlags = SCREEN_ORIENTATION_UNSPECIFIED;
         } else {
