@@ -2633,7 +2633,8 @@ public abstract class RecentsView<
                     TaskView taskView = (TaskView) child;
                     
                     // Correctly calculate distance using Layout Position vs Scroll Position
-                    int childCenter = child.getLeft() + child.getMeasuredWidth() / 2;
+                    float nonCurveTranslationX = taskView.getTranslationX() - taskView.getCurveTranslationX();
+                    float childCenter = child.getLeft() + nonCurveTranslationX + child.getMeasuredWidth() / 2;
                     int screenCenter = scroll + getMeasuredWidth() / 2;
                     float dist = childCenter - screenCenter;
 
@@ -3851,8 +3852,13 @@ public abstract class RecentsView<
     public void createTaskDismissAnimation(PendingAnimation anim,
             @Nullable TaskView dismissedTaskView,
             boolean animateTaskView, boolean shouldRemoveTask, long duration,
+<<<<<<< HEAD
             boolean dismissingForSplitSelection,
             @Nullable RecentsDismissUtils.GridEndData gridEndData) {
+=======
+            boolean dismissingForSplitSelection, boolean isExpressiveDismiss) {
+        updateOrientationHandler();
+>>>>>>> 3e5c29f2ab ([AfterlifeUI] fixup! Inconsistency dismiss Task Animation)
         if (mPendingAnimation != null) {
             mPendingAnimation.createPlaybackController().dispatchOnCancel().dispatchOnEnd();
         }
@@ -4031,7 +4037,7 @@ public abstract class RecentsView<
                             anim,
                             splitTimings);
                     if (child instanceof TaskView taskView) {
-                        mTaskViewsDismissPrimaryTranslations.put(taskView, scrollDiffPerPage);
+                        mTaskViewsDismissPrimaryTranslations.put(taskView, scrollDiff);
                     }
                     needsCurveUpdates = true;
                 }
