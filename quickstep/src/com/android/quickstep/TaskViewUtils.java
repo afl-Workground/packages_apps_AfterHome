@@ -232,6 +232,9 @@ public final class TaskViewUtils {
         int taskRectTranslationPrimary = recentsView.getScrollOffset(taskIndex);
         int taskRectTranslationSecondary = showAsGrid ? (int) taskView.getGridTranslationY() : 0;
 
+        taskRectTranslationPrimary += (int) taskView.getCurveTranslationX();
+        taskRectTranslationSecondary += (int) taskView.getCurveTranslationY();
+
         RemoteTargetHandle[] topMostSimulators = null;
 
         if (!taskView.isRunningTask()) {
@@ -246,7 +249,7 @@ public final class TaskViewUtils {
                 tvsLocal.getOrientationState().update(displayRotation, displayRotation);
 
                 tvsLocal.fullScreenProgress.value = 0;
-                tvsLocal.recentsViewScale.value = 1;
+                tvsLocal.recentsViewScale.value = taskView.getScaleX();
                 if (!enableGridOnlyOverview()) {
                     tvsLocal.setIsGridTask(taskView.isGridTask());
                 }

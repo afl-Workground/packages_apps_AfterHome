@@ -2601,7 +2601,7 @@ public abstract class RecentsView<
                     
                     taskView.setScaleX(scale);
                     taskView.setScaleY(scale);
-                    taskView.setAlpha(rawAlpha);
+                    taskView.setCurveAlpha(rawAlpha);
                     taskView.setRotationY(rotationY);
                     
                     // Override linear layout with spline layout

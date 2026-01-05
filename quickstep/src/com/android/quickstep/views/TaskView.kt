@@ -490,6 +490,11 @@ constructor(
     var attachAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Attach)
     var splitAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Split)
     private var modalAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Modal)
+    private var curveAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Curve)
+
+    fun setCurveAlpha(alpha: Float) {
+        curveAlpha = alpha
+    }
 
     protected var shouldShowScreenshot = false
         get() = !isRunningTask || field
@@ -1893,6 +1898,8 @@ constructor(
         }
         dismissScale = 1f
         translationZ = 0f
+        rotationY = 0f
+        curveAlpha = 1f
         setIconVisibleForGesture(true)
         settledProgressDismiss = 1f
         setColorTint(0f, 0)
@@ -1922,6 +1929,7 @@ constructor(
             Attach,
             Split,
             Modal,
+            Curve,
         }
 
         private enum class SettledProgress {
