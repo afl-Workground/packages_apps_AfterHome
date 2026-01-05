@@ -2798,6 +2798,14 @@ public abstract class RecentsView<
 
     public void startHome(boolean animated) {
         if (!canStartHomeSafely()) return;
+        if (animated) {
+            for (int i = 0; i < getTaskViewCount(); i++) {
+                View child = getChildAt(i);
+                if (child instanceof TaskView) {
+                    child.animate().alpha(0f).setDuration(350).start();
+                }
+            }
+        }
         handleStartHome(animated);
     }
 
