@@ -2568,7 +2568,10 @@ public abstract class RecentsView<
 
                     // Map dist to f2 (spline parameter)
                     // Center (dist=0) -> f2=3.0
-                    float f2 = 3.0f + (dist / (float) taskWidth);
+                    float f2 = 3.0f;
+                    if (taskWidth > 0) {
+                         f2 += (dist / (float) taskWidth);
+                    }
 
                     // Calculate raw spline values
                     float rawScale = (float) math.getValue(IosRecentsMath.SPLINE_SCALE, f2);
@@ -2586,6 +2589,11 @@ public abstract class RecentsView<
                     float scale = rawScale / centerScale;
                     if (Float.isNaN(scale) || Float.isInfinite(scale)) {
                         scale = 1.0f;
+                    }
+
+                    // Validate Alpha
+                    if (Float.isNaN(rawAlpha) || Float.isInfinite(rawAlpha)) {
+                        rawAlpha = 1.0f;
                     }
 
                     // Determine Visual Dimensions (Short vs Long axis) to match MIUI logic
