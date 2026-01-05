@@ -490,11 +490,7 @@ constructor(
     var attachAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Attach)
     var splitAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Split)
     private var modalAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Modal)
-    private var curveAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Curve)
-
-    fun setCurveAlpha(alpha: Float) {
-        curveAlpha = alpha
-    }
+    var curveAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Curve)
 
     protected var shouldShowScreenshot = false
         get() = !isRunningTask || field
