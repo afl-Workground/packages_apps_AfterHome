@@ -4159,7 +4159,7 @@ public abstract class RecentsView<
                     if (!isExpressiveDismiss) {
                         translateTaskWhenDismissed(
                                 child,
-                                Math.abs(i - dismissedIndex),
+                                showAsGrid ? Math.abs(i - dismissedIndex) : 0,
                                 scrollDiff,
                                 anim,
                                 splitTimings);
