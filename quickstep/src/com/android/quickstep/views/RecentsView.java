@@ -4155,11 +4155,16 @@ public abstract class RecentsView<
                 int offset = getOffsetToDismissedTask(scrollDiffPerPage, dismissedIndex,
                         lastTaskViewIndex);
                 int scrollDiff = newScroll[i] - oldScroll[i] + offset;
+                
+                if (!showAsGrid && i > dismissedIndex) {
+                    scrollDiff = mIsRtl ? scrollDiffPerPage : -scrollDiffPerPage;
+                }
+
                 if (scrollDiff != 0) {
                     if (!isExpressiveDismiss) {
                         translateTaskWhenDismissed(
                                 child,
-                                showAsGrid ? Math.abs(i - dismissedIndex) : 0,
+                                Math.abs(i - dismissedIndex),
                                 scrollDiff,
                                 anim,
                                 splitTimings);
