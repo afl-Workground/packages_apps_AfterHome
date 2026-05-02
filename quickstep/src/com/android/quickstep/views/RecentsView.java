@@ -2631,17 +2631,28 @@ public abstract class RecentsView<
             float centerY = (float) math.getValue(IosRecentsMath.SPLINE_Y_COORD, 3.0f);
             float centerX = (float) math.getValue(IosRecentsMath.SPLINE_X_COORD, 3.0f);
 
-            boolean isLandscape = getMeasuredWidth() > getMeasuredHeight();
-            // Spline X is scaled by the Short Axis (stack bunching)
-            // Spline Y is scaled by the Long Axis (vertical offset)
-            float visualWidth = isLandscape ? getMeasuredHeight() : getMeasuredWidth();
-            float visualHeight = isLandscape ? getMeasuredWidth() : getMeasuredHeight();
-
             // Use task-order index (0 = most recent/running task, on top)
             int taskIndex = 0;
+
+            // Dampen curve effect during transitions (entering app, returning home, or fading out)
+            // mContentAlpha fades during state transitions.
+            // mFullscreenProgress reaches 1.0 when opening an app.
+            // getScaleX() decreases when returning to home screen.
+            float effectStrength = (1.0f - mFullscreenProgress) * mContentAlpha * Math.min(1f, getScaleX());
+
+            boolean isLandscape = getMeasuredWidth() > getMeasuredHeight();
+            // Use actual dimensions. Scaling by the long axis in landscape was causing 
+            // the "messy" look (tasks flying off-screen vertically).
+            float visualWidth = getMeasuredWidth();
+            float visualHeight = getMeasuredHeight();
+
+            // In landscape, we dampen the vertical and horizontal spread to fit the screen better
+            float landscapeDampen = isLandscape ? 0.6f : 1.0f;
+            float finalStrength = effectStrength * landscapeDampen;
+
             for (TaskView taskView : getTaskViews()) {
                 // Skip tasks being dismissed — their animation handles transforms
-                if (taskView.isBeingDismissed) {
+                if (taskView.isBeingDismissed()) {
                     taskIndex++;
                     continue;
                 }
@@ -2665,20 +2676,22 @@ public abstract class RecentsView<
                 float rotationY = (float) math.getValue(IosRecentsMath.SPLINE_ROTATION_Y, f2);
 
                 // Normalize scale so center task = 1.0 (composited via curveScale in applyScale())
-                float scale = rawScale / centerScale;
+                // Dampen towards 1.0 during transitions
+                float scale = 1.0f + ((rawScale / centerScale) - 1.0f) * finalStrength;
+                float curveAlpha = 1.0f + (rawAlpha - 1.0f) * finalStrength;
 
-                // Normalize X & Y so center task has zero offset
-                float translationY = (rawY - centerY) * visualHeight;
+                // Normalize X & Y so center task has zero offset. Dampen during transitions.
+                float translationY = (rawY - centerY) * visualHeight * finalStrength;
                 float targetVisualOffsetX = (rawX - centerX) * visualWidth;
 
                 // Apply via dedicated curve properties — these composite correctly with
                 // other TaskView transforms (applyScale, applyTranslationX/Y, MultiValueAlpha)
                 taskView.setCurveScale(scale);
-                taskView.setCurveAlpha(rawAlpha);
-                taskView.setRotationY(rotationY);
+                taskView.setCurveAlpha(curveAlpha);
+                taskView.setRotationY(rotationY * finalStrength);
 
-                // Override linear paged layout offset with spline layout
-                taskView.setCurveTranslationX(targetVisualOffsetX - dist);
+                // Override linear paged layout offset with spline layout. Dampen during transitions.
+                taskView.setCurveTranslationX((targetVisualOffsetX - dist) * finalStrength);
                 taskView.setCurveTranslationY(translationY);
 
                 // Index 0 = most recent task (running task) = highest Z (on top)
