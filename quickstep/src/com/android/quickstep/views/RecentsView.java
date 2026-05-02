@@ -2641,14 +2641,15 @@ public abstract class RecentsView<
             float effectStrength = (1.0f - mFullscreenProgress) * mContentAlpha * Math.min(1f, getScaleX());
 
             boolean isLandscape = getMeasuredWidth() > getMeasuredHeight();
-            // Use actual dimensions. Scaling by the long axis in landscape was causing 
-            // the "messy" look (tasks flying off-screen vertically).
             float visualWidth = getMeasuredWidth();
             float visualHeight = getMeasuredHeight();
 
-            // In landscape, we dampen the vertical and horizontal spread to fit the screen better
-            float landscapeDampen = isLandscape ? 0.6f : 1.0f;
+            // In landscape, dampen the effect but ensure it spans more tasks
+            float landscapeDampen = isLandscape ? 0.7f : 1.0f;
             float finalStrength = effectStrength * landscapeDampen;
+
+            // Use the current center page to determine Z-order (dynamic Z)
+            int currentPage = getNextPage();
 
             for (TaskView taskView : getTaskViews()) {
                 // Skip tasks being dismissed — their animation handles transforms
@@ -2665,8 +2666,9 @@ public abstract class RecentsView<
                 float dist = childCenter - screenCenter;
 
                 // Map dist to spline parameter f2
-                // Center (dist=0) -> f2=3.0 (middle of the 0-5 range)
-                float f2 = 3.0f + (dist / (float) taskWidth);
+                // Use a larger normalization factor in landscape to prevent "only last app" bug
+                float normalizationWidth = isLandscape ? visualWidth : (float) taskWidth;
+                float f2 = 3.0f + (dist / normalizationWidth);
 
                 // Look up spline values
                 float rawScale = (float) math.getValue(IosRecentsMath.SPLINE_SCALE, f2);
@@ -2694,8 +2696,12 @@ public abstract class RecentsView<
                 taskView.setCurveTranslationX((targetVisualOffsetX - dist) * finalStrength);
                 taskView.setCurveTranslationY(translationY);
 
-                // Index 0 = most recent task (running task) = highest Z (on top)
-                taskView.setTranslationZ(-taskIndex);
+                // FATAL BUG FIX: Dynamic Z-order based on distance to the current page.
+                // The task closest to the center (currentPage) MUST be on top.
+                // We use a small negative offset based on distance from current page.
+                int taskOrderIndex = indexOfChild(taskView);
+                float distToCurrent = Math.abs(taskOrderIndex - currentPage);
+                taskView.setTranslationZ(-distToCurrent * 0.1f);
                 taskIndex++;
             }
         }
