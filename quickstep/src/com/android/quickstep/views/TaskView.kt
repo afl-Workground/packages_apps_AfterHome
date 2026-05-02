@@ -512,11 +512,11 @@ constructor(
     }
 
     fun setCurveAlpha(alpha: Float) {
-        curveAlpha = alpha
+        _curveAlpha = alpha
     }
 
     fun getCurveAlpha(): Float {
-        return curveAlpha
+        return _curveAlpha
     }
 
     private val taskViewAlpha = MultiValueAlpha(this, Alpha.entries.size)
@@ -525,7 +525,7 @@ constructor(
     var splitAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Split)
     private var modalAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Modal)
     // iOS-style carousel curve alpha channel
-    private var curveAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Curve)
+    private var _curveAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Curve)
 
     protected var shouldShowScreenshot = false
         get() = !isRunningTask || field
@@ -2171,7 +2171,7 @@ constructor(
         curveTransX = 0f
         curveTransY = 0f
         curveScale = 1f
-        curveAlpha = 1f
+        _curveAlpha = 1f
         rotationY = 0f
         if (recentsView?.isSplitSelectionActive != true) {
             splitSelectTranslationY = 0f

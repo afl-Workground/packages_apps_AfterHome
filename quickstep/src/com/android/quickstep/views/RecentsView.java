@@ -3854,7 +3854,7 @@ public abstract class RecentsView<
      */
     public void createTaskDismissAnimation(PendingAnimation anim,
             @Nullable TaskView dismissedTaskView,
-            boolean animateTaskView, boolean shouldRemoveTask, long duration
+            boolean animateTaskView, boolean shouldRemoveTask, long duration,
             boolean dismissingForSplitSelection,
             @Nullable RecentsDismissUtils.GridEndData gridEndData) {
         updateOrientationHandler();
