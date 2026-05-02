@@ -156,13 +156,14 @@ public class IosRecentsMath {
                  }
             }
 
-            // If not found (out of bounds), perform extrapolation
+            // If not found (out of bounds), perform extrapolation using the nearest interval.
+            // Use the same cubic formula as interpolation for consistency.
             if (idx == -1) {
                 int i2 = xValue < this.x[0] ? 0 : 4; // 4 is last interval start index (n-1)
                 double xi = this.x[i2];
                 double diff = xValue - xi;
-                // This extrapolation logic mimics the original Kotlin code
-                return this.a[i2] + ((this.b[i2] + this.c[i2] + this.d[i2]) * diff);
+                return this.a[i2] + (this.b[i2] * diff) + (this.c[i2] * diff * diff)
+                        + (this.d[i2] * diff * diff * diff);
             }
 
             // Perform Spline Interpolation

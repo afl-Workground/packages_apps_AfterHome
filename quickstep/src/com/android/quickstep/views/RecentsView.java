@@ -2624,63 +2624,66 @@ public abstract class RecentsView<
         // iOS/MIUI-style Stack Layout Implementation
         if (!showAsGrid()) {
             IosRecentsMath math = IosRecentsMath.getInstance();
-            int halfScreen = getMeasuredWidth() / 2;
             int taskWidth = getLastComputedTaskSize().width();
 
-            for (int i = 0; i < getTaskViewCount(); i++) {
-                View child = getChildAt(i);
-                if (child instanceof TaskView) {
-                    TaskView taskView = (TaskView) child;
-                    
-                    // Correctly calculate distance using Layout Position vs Scroll Position
-                    float nonCurveTranslationX = taskView.getTranslationX() - taskView.getCurveTranslationX();
-                    float childCenter = child.getLeft() + nonCurveTranslationX + child.getMeasuredWidth() / 2;
-                    int screenCenter = scroll + getMeasuredWidth() / 2;
-                    float dist = childCenter - screenCenter;
+            // Use pre-computed center anchor values (f2=3.0 is the center of the 0-5 spline range)
+            float centerScale = (float) math.getValue(IosRecentsMath.SPLINE_SCALE, 3.0f);
+            float centerY = (float) math.getValue(IosRecentsMath.SPLINE_Y_COORD, 3.0f);
+            float centerX = (float) math.getValue(IosRecentsMath.SPLINE_X_COORD, 3.0f);
 
-                    // Map dist to f2 (spline parameter)
-                    // Center (dist=0) -> f2=3.0
-                    float f2 = 3.0f + (dist / (float) taskWidth);
+            boolean isLandscape = getMeasuredWidth() > getMeasuredHeight();
+            // Spline X is scaled by the Short Axis (stack bunching)
+            // Spline Y is scaled by the Long Axis (vertical offset)
+            float visualWidth = isLandscape ? getMeasuredHeight() : getMeasuredWidth();
+            float visualHeight = isLandscape ? getMeasuredWidth() : getMeasuredHeight();
 
-                    // Calculate raw spline values
-                    float rawScale = (float) math.getValue(IosRecentsMath.SPLINE_SCALE, f2);
-                    float rawAlpha = (float) math.getValue(IosRecentsMath.SPLINE_ALPHA, f2);
-                    float rawX = (float) math.getValue(IosRecentsMath.SPLINE_X_COORD, f2);
-                    float rawY = (float) math.getValue(IosRecentsMath.SPLINE_Y_COORD, f2);
-                    float rotationY = (float) math.getValue(IosRecentsMath.SPLINE_ROTATION_Y, f2);
-
-                    // Get anchor values at center (f2=3.0) to normalize
-                    float centerScale = (float) math.getValue(IosRecentsMath.SPLINE_SCALE, 3.0f);
-                    float centerY = (float) math.getValue(IosRecentsMath.SPLINE_Y_COORD, 3.0f);
-                    float centerX = (float) math.getValue(IosRecentsMath.SPLINE_X_COORD, 3.0f);
-
-                    // Normalize Scale: Center should be 1.0f
-                    float scale = rawScale / centerScale;
-
-                    // Determine Visual Dimensions (Short vs Long axis) to match MIUI logic
-                    // Spline X is scaled by the Short Axis (Stack bunching)
-                    // Spline Y is scaled by the Long Axis (Vertical offset)
-                    boolean isLandscape = getMeasuredWidth() > getMeasuredHeight();
-                    float visualWidth = isLandscape ? getMeasuredHeight() : getMeasuredWidth(); // Short Axis
-                    float visualHeight = isLandscape ? getMeasuredWidth() : getMeasuredHeight(); // Long Axis
-
-                    // Normalize X & Y: Center should be 0 translation
-                    float translationY = (rawY - centerY) * visualHeight;
-                    float targetVisualOffsetX = (rawX - centerX) * visualWidth;
-                    
-                    taskView.setScaleX(scale);
-                    taskView.setScaleY(scale);
-                    taskView.setAlpha(rawAlpha);
-                    taskView.setRotationY(rotationY);
-                    
-                    // Override linear layout with spline layout
-                    taskView.setCurveTranslationX(targetVisualOffsetX - dist);
-                    taskView.setCurveTranslationY(translationY);
-                    
-                    // Ensure correct stacking order (tasks to the right are ON TOP)
-                    // Higher index = Rightmost = Newest = Top
-                    taskView.setTranslationZ(-i);
+            // Use task-order index (0 = most recent/running task, on top)
+            int taskIndex = 0;
+            for (TaskView taskView : getTaskViews()) {
+                // Skip tasks being dismissed — their animation handles transforms
+                if (taskView.isBeingDismissed) {
+                    taskIndex++;
+                    continue;
                 }
+
+                // Calculate distance from screen center, excluding current curve offset
+                // to avoid compounding error each frame
+                float nonCurveTranslationX = taskView.getTranslationX() - taskView.getCurveTranslationX();
+                float childCenter = taskView.getLeft() + nonCurveTranslationX + taskView.getMeasuredWidth() / 2f;
+                int screenCenter = scroll + getMeasuredWidth() / 2;
+                float dist = childCenter - screenCenter;
+
+                // Map dist to spline parameter f2
+                // Center (dist=0) -> f2=3.0 (middle of the 0-5 range)
+                float f2 = 3.0f + (dist / (float) taskWidth);
+
+                // Look up spline values
+                float rawScale = (float) math.getValue(IosRecentsMath.SPLINE_SCALE, f2);
+                float rawAlpha = (float) math.getValue(IosRecentsMath.SPLINE_ALPHA, f2);
+                float rawX = (float) math.getValue(IosRecentsMath.SPLINE_X_COORD, f2);
+                float rawY = (float) math.getValue(IosRecentsMath.SPLINE_Y_COORD, f2);
+                float rotationY = (float) math.getValue(IosRecentsMath.SPLINE_ROTATION_Y, f2);
+
+                // Normalize scale so center task = 1.0 (composited via curveScale in applyScale())
+                float scale = rawScale / centerScale;
+
+                // Normalize X & Y so center task has zero offset
+                float translationY = (rawY - centerY) * visualHeight;
+                float targetVisualOffsetX = (rawX - centerX) * visualWidth;
+
+                // Apply via dedicated curve properties — these composite correctly with
+                // other TaskView transforms (applyScale, applyTranslationX/Y, MultiValueAlpha)
+                taskView.setCurveScale(scale);
+                taskView.setCurveAlpha(rawAlpha);
+                taskView.setRotationY(rotationY);
+
+                // Override linear paged layout offset with spline layout
+                taskView.setCurveTranslationX(targetVisualOffsetX - dist);
+                taskView.setCurveTranslationY(translationY);
+
+                // Index 0 = most recent task (running task) = highest Z (on top)
+                taskView.setTranslationZ(-taskIndex);
+                taskIndex++;
             }
         }
     }
@@ -3851,14 +3854,10 @@ public abstract class RecentsView<
      */
     public void createTaskDismissAnimation(PendingAnimation anim,
             @Nullable TaskView dismissedTaskView,
-            boolean animateTaskView, boolean shouldRemoveTask, long duration,
-<<<<<<< HEAD
+            boolean animateTaskView, boolean shouldRemoveTask, long duration
             boolean dismissingForSplitSelection,
             @Nullable RecentsDismissUtils.GridEndData gridEndData) {
-=======
-            boolean dismissingForSplitSelection, boolean isExpressiveDismiss) {
         updateOrientationHandler();
->>>>>>> 3e5c29f2ab ([AfterlifeUI] fixup! Inconsistency dismiss Task Animation)
         if (mPendingAnimation != null) {
             mPendingAnimation.createPlaybackController().dispatchOnCancel().dispatchOnEnd();
         }

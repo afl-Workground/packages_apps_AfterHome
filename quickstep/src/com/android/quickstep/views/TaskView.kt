@@ -386,6 +386,13 @@ constructor(
             applyScale()
         }
 
+    // iOS-style carousel curve scale (composited on top of other scales)
+    var curveScale = 1f
+        set(value) {
+            field = value
+            applyScale()
+        }
+
     private var dismissScale = 1f
         set(value) {
             field = value
@@ -504,11 +511,21 @@ constructor(
         return curveTransY
     }
 
+    fun setCurveAlpha(alpha: Float) {
+        curveAlpha = alpha
+    }
+
+    fun getCurveAlpha(): Float {
+        return curveAlpha
+    }
+
     private val taskViewAlpha = MultiValueAlpha(this, Alpha.entries.size)
     protected var stableAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Stable)
     var attachAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Attach)
     var splitAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Split)
     private var modalAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Modal)
+    // iOS-style carousel curve alpha channel
+    private var curveAlpha by MultiPropertyDelegate(taskViewAlpha, Alpha.Curve)
 
     protected var shouldShowScreenshot = false
         get() = !isRunningTask || field
@@ -2039,7 +2056,8 @@ constructor(
     fun getSizeAdjustment(fullscreenEnabled: Boolean) = if (fullscreenEnabled) nonGridScale else 1f
 
     private fun applyScale() {
-        val scale = persistentScale * dismissScale * Utilities.mapRange(modalness, 1f, modalScale)
+        val scale = persistentScale * dismissScale * curveScale *
+            Utilities.mapRange(modalness, 1f, modalScale)
         scaleX = scale
         scaleY = scale
         updateFullscreenParams()
@@ -2152,6 +2170,9 @@ constructor(
         taskResistanceTranslationY = 0f
         curveTransX = 0f
         curveTransY = 0f
+        curveScale = 1f
+        curveAlpha = 1f
+        rotationY = 0f
         if (recentsView?.isSplitSelectionActive != true) {
             splitSelectTranslationY = 0f
         }
@@ -2189,6 +2210,7 @@ constructor(
             Attach,
             Split,
             Modal,
+            Curve, // iOS-style carousel curve alpha
         }
 
         private enum class SettledProgress {
